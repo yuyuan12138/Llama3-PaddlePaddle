@@ -1,2 +1,2 @@
-./__pycache__
-./state_dict
+__pycache__/
+state_dict/
