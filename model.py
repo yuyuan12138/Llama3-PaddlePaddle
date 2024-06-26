@@ -4,35 +4,58 @@ from config import config
 from tokenizer import tokenizer
 
 class Llama3(nn.Layer):
+    def __init__(self, name_scope=None, dtype="float32"):
+        super().__init__(name_scope, dtype)
+        self.embedding_layer = nn.Embedding(config.vocab_size, config.dim)
+        self.rms_norm_final = RMS_Norm(config.dim)
+        self.layers = nn.LayerList([
+            Llama3_layer() for _ in range(config.n_layers)
+        ])
+        self.out = paddle.create_parameter(shape=[4096, 128256], dtype=dtype)
+
+    def forward(self, tokens):
+        token_embeddings_unnormalized = self.embedding_layer(paddle.to_tensor(tokens))
+        final_embeddings = token_embeddings_unnormalized
+        for layer in self.layers:
+            final_embeddings = layer(token_embeddings_unnormalized)
+        
+        final_embeddings = self.rms_norm_final(final_embeddings)
+        logits = paddle.matmul(final_embeddings[-1], self.out)
+        print(logits.shape)
+            
+        
+class Llama3_layer(nn.Layer):
     def __init__(self, name_scope=None, dtype='float32'):
         super().__init__(name_scope, dtype)
+        self.rms_norm_embedding = RMS_Norm(config.dim)
+        self.rms_norm_attention = RMS_Norm(config.dim)
+        self.attention = Attention_block()
+        self.ffn = SwiGLU_FFN()
         
-
-    def forward(self, x):
-        pass
+    def forward(self, token_embeddings_unnormalized):
+        token_embeddings = self.rms_norm_embedding(token_embeddings_unnormalized)
+        embedding_after_edit = self.attention(token_embeddings, token_embeddings_unnormalized)
+        embedding_after_edit_normalized = self.rms_norm_attention(embedding_after_edit)
+        output_after_feedforward = self.ffn(embedding_after_edit_normalized)
+        layer_embedding = embedding_after_edit + output_after_feedforward
+        return layer_embedding
+        
 
 class SwiGLU_FFN(nn.Layer):
     def __init__(self, name_scope=None, dtype="float32"):
         super().__init__(name_scope, dtype)
-        self.rms_norm = RMS_Norm(config.dim)
-        self.attention_block = Attention_block()
         self.w1 = paddle.create_parameter(shape=[4096, 14336], dtype=dtype)
         self.w2 = paddle.create_parameter(shape=[14336, 4096], dtype=dtype)
         self.w3 = paddle.create_parameter(shape=[4096, 14336], dtype=dtype)
 
-    def forward(self, tokens):
-            embedding_after_edit, token_embeddings_unnormalized = self.attention_block(tokens)
-            embedding_after_edit_normalized = self.rms_norm(embedding_after_edit)
+    def forward(self, embedding_after_edit_normalized):
             # print(embedding_after_edit_normalized.shape)
             output_after_feedforward = paddle.matmul(nn.functional.silu(paddle.matmul(embedding_after_edit_normalized, self.w1)) * paddle.matmul(embedding_after_edit_normalized, self.w3), self.w2)
-            # print(output_after_feedforward.shape)
-            layer_embedding = embedding_after_edit + output_after_feedforward
+            return output_after_feedforward
 
 class Attention_block(nn.Layer):
     def __init__(self, name_scope=None, dtype="float32"):
         super().__init__(name_scope, dtype)
-
-        self.embedding_layer = Embedding_Layer()
 
         self.head_dim = config.dim // config.n_heads
         self.kv_head_dim = config.dim // 4 // config.n_kv_heads
@@ -47,11 +70,10 @@ class Attention_block(nn.Layer):
         
         # print(self.wv.shape)
 
-    def forward(self, token):
+    def forward(self, token_embeddings, token_embeddings_unnormalized):
         qkv_attention_store = []
         for head in range(config.n_heads):
 
-            token_embeddings, token_embeddings_unnormalized = self.embedding_layer(token)
             q_per_token = paddle.matmul(token_embeddings, self.wq[head].T)
             # print(q_per_token.shape)
             q_per_token_split_into_pairs = paddle.reshape(q_per_token, [q_per_token.shape[0], -1, 2])
@@ -75,7 +97,7 @@ class Attention_block(nn.Layer):
             # print(k_per_token_rotated.shape)
             qk_per_token = paddle.matmul(q_per_token_rotated, k_per_token_rotated.T) / (self.head_dim) ** 0.5
             # print(qk_per_token.shape)
-            mask = paddle.full((len(token), len(token)), float("-inf"))
+            mask = paddle.full((len(token_embeddings), len(token_embeddings)), float("-inf"))
             mask = paddle.triu(mask, diagonal=1)
             # print(mask)
             qk_per_token_after_masking = qk_per_token + mask
@@ -88,21 +110,7 @@ class Attention_block(nn.Layer):
         # print(stacked_qkv_attention.shape)
         embedding_delta = paddle.matmul(stacked_qkv_attention, self.wo.T)
         embedding_after_edit = token_embeddings_unnormalized + embedding_delta
-        return embedding_after_edit, token_embeddings_unnormalized
-
-
-class Embedding_Layer(nn.Layer):
-    def __init__(self, name_scope=None, dtype='float32'):
-        super().__init__(name_scope, dtype)
-        
-        self.embedding_layer = nn.Embedding(config.vocab_size, config.dim)
-        self.rms_norm = RMS_Norm(config.dim)
-
-    def forward(self, tokens):
-        tokens = paddle.to_tensor(tokens)
-        token_embeddings_unnormalized = self.embedding_layer(tokens).to(paddle.float32)
-        token_embeddings = self.rms_norm(token_embeddings_unnormalized)
-        return token_embeddings, token_embeddings_unnormalized
+        return embedding_after_edit
 
 
 class RMS_Norm(nn.Layer):
@@ -119,9 +127,10 @@ class RMS_Norm(nn.Layer):
     
 
 if __name__ == "__main__":
-    model = SwiGLU_FFN()
+    model = Llama3()
     prompt = "the answer to the ultimate question of life, the universe, and everything is "
     tokens = [128000] + tokenizer.encode(prompt)
     # print(tokens)
     # print(model(tokens).shape)
-    attn = model(tokens)
+    # attn = model(tokens)
+    re = model(tokens)
