@@ -21,7 +21,8 @@ class Llama3(nn.Layer):
         
         final_embeddings = self.rms_norm_final(final_embeddings)
         logits = paddle.matmul(final_embeddings[-1], self.out)
-        print(logits.shape)
+        next_token = paddle.argmax(logits, axis=-1)
+        return next_token
             
         
 class Llama3_layer(nn.Layer):
