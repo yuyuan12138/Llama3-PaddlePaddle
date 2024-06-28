@@ -1,5 +1,6 @@
 from typing import AbstractSet, Collection, Literal, Union
-from tiktoken_cpy import _tiktoken
+# from tiktoken_cpy import _tiktoken
+from test import CoreBPE
 import functools
 
 class Encoding:
@@ -14,7 +15,8 @@ class Encoding:
         self._mergeable_ranks = mergeable_ranks
         self._special_tokens = special_tokens
 
-        self._core_bpe = _tiktoken.CoreBPE(mergeable_ranks, special_tokens, pat_str)
+        # self._core_bpe = _tiktoken.CoreBPE(mergeable_ranks, special_tokens, pat_str)
+        self._core_bpe = CoreBPE(mergeable_ranks, special_tokens, pat_str)
 
     def encode(
         self,
@@ -28,7 +30,8 @@ class Encoding:
 
         if isinstance(allowed_special, frozenset):
             allowed_special = set(allowed_special)
-
+        # print(self._core_bpe.encode(text, allowed_special)[:10])
+        
         try:
             return self._core_bpe.encode(text, allowed_special)
         except UnicodeEncodeError:

@@ -1,5 +1,6 @@
 from pathlib import Path
-import tiktoken_ as tiktoken
+# import tiktoken_ as tiktoken
+import tiktoken
 import base64
 import paddle
 
@@ -29,6 +30,7 @@ class Tokenizer:
         mergeable_ranks = load_tiktoken_bpe(tokenizer_path)
         # print(mergeable_ranks)
         self.tokenizer = tiktoken.Encoding(
+            name = "sss",
             pat_str=r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+",
             mergeable_ranks=mergeable_ranks,
             special_tokens={token: len(mergeable_ranks) + i for i, token in enumerate(special_tokens)},
