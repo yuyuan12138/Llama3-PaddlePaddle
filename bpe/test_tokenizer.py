@@ -1,8 +1,6 @@
-import pytest
 import os
 
-from basic import BasicTokenizer
-from regexs import RegexTokenizer
+from .regexs import RegexTokenizer
 
 # -----------------------------------------------------------------------------
 # common test data
@@ -49,9 +47,9 @@ if __name__ == "__main__":
     tokenizer = RegexTokenizer(r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+",
             )
     text = "hello world "
-    # text = llama_text
-    tokenizer.train(text, 256 + 3)
+    text = llama_text
     tokenizer.register_special_tokens(special_tokens)
+    tokenizer.train(text, 256 + 3)
     ids = tokenizer.encode(text)
     print(tokenizer.encode(text))
     print(tokenizer.decode(tokenizer.encode(text)))

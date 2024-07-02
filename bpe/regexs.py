@@ -10,7 +10,7 @@ Unlike BasicTokenizer:
 """
 
 import regex as re
-from base import Tokenizer, get_stats, merge
+from .base import Tokenizer, get_stats, merge
 
 
 # the main GPT text split patterns, see
@@ -21,7 +21,7 @@ GPT4_SPLIT_PATTERN = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1
 
 class RegexTokenizer(Tokenizer):
 
-    def __init__(self, pattern=None):
+    def __init__(self, pattern: str=None) -> None:
         """
         - pattern: optional string to override the default (GPT-4 split pattern)
         - special_tokens: str -> int dictionary of special tokens
@@ -33,7 +33,7 @@ class RegexTokenizer(Tokenizer):
         self.special_tokens = {}
         self.inverse_special_tokens = {}
 
-    def train(self, text, vocab_size, verbose=False):
+    def train(self, text: str, vocab_size: int, verbose: bool = False) -> None:
         assert vocab_size >= 256
         num_merges = vocab_size - 256
 
@@ -41,6 +41,7 @@ class RegexTokenizer(Tokenizer):
         text_chunks = re.findall(self.compiled_pattern, text)
 
         # input text preprocessing
+        # 全部用utf-8编码
         ids = [list(ch.encode("utf-8")) for ch in text_chunks]
 
         # iteratively merge the most common pairs to create new tokens

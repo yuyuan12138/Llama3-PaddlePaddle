@@ -10,11 +10,12 @@ import unicodedata
 # -----------------------------------------------------------------------------
 # a few helper functions useful for both BasicTokenizer and RegexTokenizer
 
-def get_stats(ids, counts=None):
+def get_stats(ids: list[int], counts: int = None) -> dict[tuple, int]:
     """
     Given a list of integers, return a dictionary of counts of consecutive pairs
     Example: [1, 2, 3, 1, 2] -> {(1, 2): 2, (2, 3): 1, (3, 1): 1}
     Optionally allows to update an existing dictionary of counts
+    获取整数列表中的对数
     """
     counts = {} if counts is None else counts
     for pair in zip(ids, ids[1:]): # iterate consecutive elements
@@ -22,11 +23,12 @@ def get_stats(ids, counts=None):
     return counts
 
 
-def merge(ids, pair, idx):
+def merge(ids: list[int], pair: tuple, idx: int) -> list[int]:
     """
     In the list of integers (ids), replace all consecutive occurrences
     of pair with the new integer token idx
     Example: ids=[1, 2, 3, 1, 2], pair=(1, 2), idx=4 -> [4, 3, 4]
+    替换为一个新的整数
     """
     newids = []
     i = 0
@@ -40,23 +42,21 @@ def merge(ids, pair, idx):
             i += 1
     return newids
 
-# first two helper functions...
+'''
+这个函数的目的是从给定的字符串 s 中移除或转义所有的Unicode控制字符
+'''
 def replace_control_characters(s: str) -> str:
-    # we don't want to print control characters
-    # which distort the output (e.g. \n or much worse)
-    # https://stackoverflow.com/questions/4324790/removing-control-characters-from-a-string-in-python/19016117#19016117
-    # http://www.unicode.org/reports/tr44/#GC_Values_Table
     chars = []
     for ch in s:
         if unicodedata.category(ch)[0] != "C":
             chars.append(ch) # this character is ok
         else:
-            chars.append(f"\\u{ord(ch):04x}") # escape
+            chars.append(f"\\u{ord(ch):04x}") # 转义
     return "".join(chars)
 
 def render_token(t: bytes) -> str:
-    # pretty print a token, escaping control characters
-    s = t.decode('utf-8', errors='replace')
+    # 这个函数的目的是将字节序列 t 解码为字符串，并清除任何潜在的控制字符，使其适合进行清晰、无干扰的显示。
+    s = t.decode('utf-8', errors='replace') # 如果在解码过程中遇到无效的字节序列，则使用 'replace' 选项替换为一个占位符。
     s = replace_control_characters(s)
     return s
 
