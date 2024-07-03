@@ -1,5 +1,4 @@
 import regex
-import tiktoken
 import json
 
 class CoreBPE:
@@ -12,8 +11,7 @@ class CoreBPE:
         :param pat_str: str, 用于分割文本的正则表达式。
         """
         self.mergeable_ranks = mergeable_ranks
-        self.special_tokens = special_tokens
-        # print(special_tokens)
+        self.special_tokens = special_tokens        # print(special_tokens)
         self.pattern = regex.compile(pat_str)
     
     def encode(self, text, allowed_special=None):
