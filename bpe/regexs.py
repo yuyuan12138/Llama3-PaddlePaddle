@@ -36,8 +36,12 @@ class RegexTokenizer(Tokenizer):
         vocab = {idx: bytes([idx]) for idx in range(256)}  # 初始化词汇表
         for i in range(num_merges):
             stats = {}
+            
             for chunk_ids in ids:
                 get_stats(chunk_ids, stats)  # 统计每对相邻字节的出现次数
+            if stats == {}:
+                # print("Train finish")
+                break
             pair = max(stats, key=stats.get)  # 选择出现最频繁的字节对
             idx = 256 + i
 
@@ -129,4 +133,23 @@ class RegexTokenizer(Tokenizer):
                 ids.append(special[part])
             else:
                 ids.extend(self.encode_ordinary(part))
+        return ids
+    
+    def _encode_chunk(self, text_bytes):
+        # return the token ids
+        # let's begin. first, convert all bytes to integers in range 0..255
+        ids = list(text_bytes)
+        while len(ids) >= 2:
+            # find the pair with the lowest merge index
+            stats = get_stats(ids)
+            pair = min(stats, key=lambda p: self.merges.get(p, float("inf")))
+            # subtle: if there are no more merges available, the key will
+            # result in an inf for every single pair, and the min will be
+            # just the first pair in the list, arbitrarily
+            # we can detect this terminating case by a membership check
+            if pair not in self.merges:
+                break # nothing else can be merged anymore
+            # otherwise let's merge the best pair (lowest merge index)
+            idx = self.merges[pair]
+            ids = merge(ids, pair, idx)
         return ids

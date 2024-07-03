@@ -1,24 +1,14 @@
 from pathlib import Path
-# import tiktoken_ as tiktoken
 import tiktoken
-import base64
+from tiktoken.load import load_tiktoken_bpe
 import paddle
-# from regexs import RegexTokenizer
-import bpe
-
-def load_tiktoken_bpe(cache_path):
-    with open(cache_path, "rb") as f:
-            contents = f.read()
-    return {
-            base64.b64decode(token): int(rank)
-            for token, rank in (line.split() for line in contents.splitlines() if line)
-        }
 
 class Tokenizer:
-    def __init__(self) -> None:
+    def __init__(self, pattern=None) -> None:
         tokenizer_path = "state_dict/tokenizer.model"
         GPT4_SPLIT_PATTERN = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
         LLAMA3_SPLIT_PATTERN = r"""(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+"""
+        self.pattern = pattern if pattern != None else LLAMA3_SPLIT_PATTERN
         special_tokens = [
             "<|begin_of_text|>",
             "<|end_of_text|>",
@@ -32,12 +22,9 @@ class Tokenizer:
             "<|eot_id|>",  # end of turn
         ] + [f"<|reserved_special_token_{i}|>" for i in range(5, 256 - 5)]
         mergeable_ranks = load_tiktoken_bpe(tokenizer_path)
-        # print(mergeable_ranks)
         self.tokenizer = tiktoken.Encoding(
             name = "sss",
-            pat_str=LLAMA3_SPLIT_PATTERN,
-            # pat_str=GPT4_SPLIT_PATTERN,
-            # pat_str=r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+",
+            pat_str=self.pattern,
             mergeable_ranks=mergeable_ranks,
             special_tokens={token: len(mergeable_ranks) + i for i, token in enumerate(special_tokens)},
         )
@@ -68,13 +55,16 @@ The ancestors of llamas are thought to have originated from the Great Plains of 
     GPT4_SPLIT_PATTERN = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
     LLAMA3_SPLIT_PATTERN = r"""(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+"""
     # tokenizer = RegexTokenizer(GPT4_SPLIT_PATTERN)
-    # tokenizer = Tokenizer().tokenizer
-    tokenizer = bpe.RegexTokenizer(LLAMA3_SPLIT_PATTERN)
-    tokenizer.register_special_tokens(special_tokens=special_tokens)
-    prompt = llama_text
+    tokenizer = Tokenizer().tokenizer
+    # tokenizer = bpe.RegexTokenizer(LLAMA3_SPLIT_PATTERN)
+    # tokenizer.register_special_tokens(special_tokens=special_tokens)
+    prompt = "hello, world"
     # print(prompt)
     # print(tokenizer.encode(prompt))
-    tokens = paddle.to_tensor(tokenizer.encode(prompt, set(special_tokens)))
+    # tokens = paddle.to_tensor(tokenizer.encode(prompt, set(special_tokens)))
+    tokens = [128000] + tokenizer.encode(prompt)
+    print(tokens)
+    tokens = paddle.to_tensor(tokens)
     prompt_split_as_tokens = [tokenizer.decode([token.item()]) for token in tokens]
     print(prompt_split_as_tokens)
     

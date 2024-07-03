@@ -1,3 +1,4 @@
 __pycache__/
 state_dict/
 train.py
+translation2019zh/
