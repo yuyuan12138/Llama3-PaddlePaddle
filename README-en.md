@@ -1,5 +1,7 @@
 # Advanced Text Processing Library
 
+[english](./README-en.md), [中文](./README.md).
+
 ## Overview
 
 This library encompasses a series of Python classes and functions designed for advanced text processing, including model configuration, byte pair encoding (BPE), regex-based tokenization, and control character handling. These components are suitable for constructing and operating on natural language processing (NLP) models, especially those that require sophisticated text manipulation and configuration management.
