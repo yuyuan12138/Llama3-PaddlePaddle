@@ -39,7 +39,7 @@ class Llama3(nn.Layer):
         logits = paddle.matmul(final_embeddings[-1], self.out)
         # 选择概率最高的下一个词
         next_token = paddle.argmax(logits, axis=-1)
-        return next_token
+        return next_token, logits
             
 
 # 定义 Llama3 层的类，继承自 nn.Layer
@@ -169,16 +169,19 @@ class RMS_Norm(nn.Layer):
 
     # 定义归一化逻辑
     def forward(self, hidden_state):
-        variance = hidden_state.to(paddle.float32).pow(2).mean(-1, keepdim=True)
+        variance = hidden_state.pow(2).mean(-1, keepdim=True)
         hidden_state *= paddle.rsqrt(variance + config.norm_eps)
         return hidden_state * self.weight   
     
 
 if __name__ == "__main__":
+    paddle.device.set_device("gpu:0")
     model = Llama3()
-    prompt = "the answer to the ultimate question of life, the universe, and everything is "
+    # prompt = "the answer to the ultimate question of life, the universe, and everything is "
+    prompt = "我是什么东西?"
     tokens = [128000] + tokenizer.encode(prompt)
     # print(tokens)
     # print(model(tokens).shape)
     # attn = model(tokens)
     re = model(tokens)
+    print(re)

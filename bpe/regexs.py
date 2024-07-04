@@ -40,7 +40,6 @@ class RegexTokenizer(Tokenizer):
             for chunk_ids in ids:
                 get_stats(chunk_ids, stats)  # 统计每对相邻字节的出现次数
             if stats == {}:
-                # print("Train finish")
                 break
             pair = max(stats, key=stats.get)  # 选择出现最频繁的字节对
             idx = 256 + i
@@ -136,20 +135,27 @@ class RegexTokenizer(Tokenizer):
         return ids
     
     def _encode_chunk(self, text_bytes):
-        # return the token ids
-        # let's begin. first, convert all bytes to integers in range 0..255
+        # 将字节序列转换为整数列表，每个整数代表一个字节
         ids = list(text_bytes)
+
+        # 循环直到没有足够的元素来进行合并
         while len(ids) >= 2:
-            # find the pair with the lowest merge index
+            # 获取当前id列表中所有相邻元素对的出现频率统计
             stats = get_stats(ids)
+
+            # 在统计数据中找到拥有最低合并索引的字节对
+            # 如果没有更多可以合并的对，使用 float("inf") 作为默认值
             pair = min(stats, key=lambda p: self.merges.get(p, float("inf")))
-            # subtle: if there are no more merges available, the key will
-            # result in an inf for every single pair, and the min will be
-            # just the first pair in the list, arbitrarily
-            # we can detect this terminating case by a membership check
+
+            # 检查是否存在可以合并的字节对
+            # 如果当前的最小字节对不在合并字典中，表示没有可合并的对，退出循环
             if pair not in self.merges:
-                break # nothing else can be merged anymore
-            # otherwise let's merge the best pair (lowest merge index)
+                break  # 如果没有可合并的对了，终止合并过程
+
+            # 否则，获取该字节对的新索引，并在id列表中进行合并
             idx = self.merges[pair]
             ids = merge(ids, pair, idx)
+
+        # 返回处理后的id列表，表示编码后的标记
         return ids
+

@@ -43,7 +43,7 @@
 
 ## 安装
 
-确保安装了 Python 3.6 及以上版本，然后安装所需的包：
+确保安装了 Python 3.11 及以上版本，然后安装所需的包：
 
 ```bash
 pip install paddlepaddle
