@@ -20,7 +20,7 @@ if __name__ == "__main__":
     model = Llama3()
     # train_size = len(english_train)
 
-    loss_fn = nn.CrossEntropyLoss()
+    loss_fn = nn.MSELoss()
 
     optim = paddle.optimizer.AdamW(learning_rate=0.001, parameters=model.parameters())
     

@@ -40,7 +40,7 @@ class Llama3(nn.Layer):
         # 计算 logits
         logits = paddle.matmul(final_embeddings, self.out)
         # 选择概率最高的下一个词
-        next_token = paddle.argmax(logits, axis=-1)
+        next_token = paddle.argmax(logits, axis=-1, keepdim=True)
         return next_token, logits
             
 
