@@ -26,9 +26,11 @@ class Llama3(nn.Layer):
 
    # 定义前向传播逻辑
     def forward(self, tokens):
+
         # 通过嵌入层获取未归一化的嵌入
         token_embeddings_unnormalized = self.embedding_layer(paddle.to_tensor(tokens))
         final_embeddings = token_embeddings_unnormalized
+
         # 逐层通过模型层处理嵌入
         for layer in self.layers:
             final_embeddings = layer(token_embeddings_unnormalized)
@@ -36,7 +38,7 @@ class Llama3(nn.Layer):
         # 应用最终的 RMS 归一化
         final_embeddings = self.rms_norm_final(final_embeddings)
         # 计算 logits
-        logits = paddle.matmul(final_embeddings[-1], self.out)
+        logits = paddle.matmul(final_embeddings, self.out)
         # 选择概率最高的下一个词
         next_token = paddle.argmax(logits, axis=-1)
         return next_token, logits
@@ -177,11 +179,8 @@ class RMS_Norm(nn.Layer):
 if __name__ == "__main__":
     paddle.device.set_device("gpu:0")
     model = Llama3()
-    # prompt = "the answer to the ultimate question of life, the universe, and everything is "
-    prompt = "我是什么东西?"
+    prompt = "the answer to the ultimate question of life, the universe, and everything is "
+    # prompt = "我是什么东西?"
     tokens = [128000] + tokenizer.encode(prompt)
-    # print(tokens)
-    # print(model(tokens).shape)
-    # attn = model(tokens)
     re = model(tokens)
     print(re)
