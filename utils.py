@@ -1,63 +1,31 @@
-from model import Llama3
-import paddle
-import paddle.nn as nn
-from tokenizer import tokenizer
-from utils import read_json, reshape_chinese_english_token
+def read_json(path):
+    english = []
+    chinese = []
+    print("start_read")
+    with open(f'translation2019zh/translation2019zh_{path}.json', 'r', encoding='utf-8') as f:
+        while True:
+            try:
+                line = eval(f.readline())
+                english.append(line['english'])
+                chinese.append(line['chinese'])
+            except:
+                break
+    print("end_read")
+    return english, chinese
 
-if __name__ == "__main__":
-
-    # 使用CPU训练
-    # paddle.device.set_device('cpu')
-
-    # 使用GPU训练
-    paddle.device.set_device('gpu:0')
-
-    # 读入数据集
-    english_train, chinese_train = read_json("train")   # 训练集
+def reshape_chinese_english_token(english, chinese):
+    if len(english) == len(chinese):
+        return english, chinese
     
-    english_valid, chinese_valid = read_json('valid')   # 验证集
-        
-    model = Llama3()
-    # train_size = len(english_train)
-
-    loss_fn = nn.MSELoss()
-
-    optim = paddle.optimizer.SGD(learning_rate=0.001, parameters=model.parameters())
+    if len(english) < len(chinese):
+        return english + [0] * (len(chinese) - len(english)), chinese
+    if len(english) > len(chinese):
+        return english, chinese + [0] * (len(english) - len(chinese))
     
-    model.train()
-    for idx, (english, chinese) in enumerate(zip(english_train, chinese_train)):
-        optim.clear_grad()
-        tokens_english = [128000] + tokenizer.encode(english)
-        tokens_chinese = [128000] + tokenizer.encode(chinese)
+# if __name__ == "__main__":
+#     a = [[1, 2],
+#          [2, 3]]
+#     b = [[1, 2]]
 
-        tokens_english, tokens_chinese = reshape_chinese_english_token(tokens_english, 
-                                                                       tokens_chinese)
-        tokens_english = paddle.to_tensor(tokens_english, dtype='int32')
-        tokens_chinese = paddle.to_tensor(tokens_chinese, dtype='float32')
-        
-        pre_index, ouput = model(tokens_english)
-        ouput = paddle.index_sample(ouput, pre_index)
-        loss = loss_fn(ouput, tokens_chinese)
-        loss.backward()
-        print(f"loss: {loss.item()}")
-        print(tokenizer.decode(pre_index), chinese)
-        if idx % 10000 == 0 and idx != 0:
-            print("save_model")
-            paddle.save(model, f"model_{idx}")
-    
-    with paddle.no_grad():
-        for idx, (english, chinese) in enumerate(zip(english_valid, chinese_valid)):
-            optim.clear_grad()
-            tokens_english = [128000] + tokenizer.encode(english)
-            tokens_chinese = [128000] + tokenizer.encode(chinese)
-
-            tokens_english, tokens_chinese = reshape_chinese_english_token(paddle.to_tensor(tokens_english, dtype="float32"), 
-                                                                           paddle.to_tensor(tokens_chinese, dtype='float32'))
-
-            pre_index, ouput = model(tokens_english)
-            print(tokenizer.decode(pre_index), chinese)
-    
-
-
-    
-    
+#     a, b = reshape_chinese_english_token(paddle.to_tensor(a, dtype='float32'), paddle.to_tensor(b, dtype='float32'))
+#     print(a, b)

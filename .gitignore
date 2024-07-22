@@ -2,3 +2,7 @@ __pycache__/
 state_dict/
 train.py
 translation2019zh/
+data_train.json
+data_valid.json
+data.json
+oo.ipynb
