@@ -41,7 +41,7 @@ class Llama3(nn.Module):
     
 
 # 定义 Llama3 层的类，继承自 nn.Layer
-class Llama3_layer(nn.Layer):
+class Llama3_layer(nn.Module):
     def __init__(self, name_scope=None, dtype='float32'):
         super().__init__(name_scope, dtype)
         # 初始化两个 RMS 归一化层和注意力模块与前馈网络
@@ -61,7 +61,7 @@ class Llama3_layer(nn.Layer):
 
 
 # 定义 RMS 归一化类
-class RMS_Norm(nn.Layer):
+class RMS_Norm(nn.Module):
     def __init__(self, normalized_shape, name_scope=None, dtype='float32'):
         super().__init__(name_scope, dtype)
         # 初始化归一化权重
@@ -73,7 +73,7 @@ class RMS_Norm(nn.Layer):
         hidden_state *= torch.rsqrt(variance + config.norm_eps)
         return hidden_state * self.weight   
     
-class SwiGLU_FFN(nn.Layer):
+class SwiGLU_FFN(nn.Module):
     def __init__(self, name_scope=None, dtype="float32"):
         super().__init__(name_scope, dtype)
         # 初始化网络参数
@@ -88,7 +88,7 @@ class SwiGLU_FFN(nn.Layer):
         return output_after_feedforward
 
 # 定义注意力模块类
-class Attention_block(nn.Layer):
+class Attention_block(nn.Module):
     def __init__(self, name_scope=None, dtype="float32"):
         super().__init__(name_scope, dtype)
         # 注意力机制的头维度和键值对的头维度
@@ -169,7 +169,7 @@ class Attention_block(nn.Layer):
         return qk_matrix + mask
 
 
-class SwiGLU_FFN(nn.Layer):
+class SwiGLU_FFN(nn.Module):
     def __init__(self, name_scope=None, dtype="float32"):
         super().__init__(name_scope, dtype)
         # 初始化网络参数
